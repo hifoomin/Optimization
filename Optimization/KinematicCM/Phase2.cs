@@ -3,7 +3,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Optimization
+namespace Optimization.KinematicCM
 {
     public static class Phase2
     {
@@ -60,7 +60,7 @@ namespace Optimization
                                         vector = self.GetObstructionNormal(vector, hitStabilityReport);
                                         Vector3 vector2 = vector * (num2 + 0.001f);
 
-                                        lock (lockObject) // Lock the critical section
+                                        lock (lockObject) // mf changes transient pos
                                         {
                                             self.TransientPosition += vector2;
 
@@ -151,14 +151,28 @@ namespace Optimization
                 {
                     self.TransientPosition = self.InitialSimulationPosition + Vector3.ProjectOnPlane(self.TransientPosition - self.InitialSimulationPosition, self.PlanarConstraintAxis.normalized);
                 }
+
+                // from here
+
                 if (self.DetectDiscreteCollisions)
                 {
                     int num5 = self.CharacterCollisionsOverlap(self.TransientPosition, self.TransientRotation, self._internalProbedColliders, 0.002f);
-                    for (int j = 0; j < num5; j++)
+
+                    object lockObject = new object();
+
+                    Parallel.For(0, num5, j =>
                     {
-                        self.CharacterController.OnDiscreteCollisionDetected(self._internalProbedColliders[j]);
-                    }
+                        Collider collider = self._internalProbedColliders[j];
+
+                        lock (lockObject)
+                        {
+                            self.CharacterController.OnDiscreteCollisionDetected(collider);
+                        }
+                    });
                 }
+
+                // to here
+
                 self.CharacterController.AfterCharacterUpdate(deltaTime);
             }
         }

@@ -3,13 +3,12 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Optimization
+namespace Optimization.KinematicCM
 {
     public static class Phase1
     {
         private static void UpdatePhase1Baseder(Action<KinematicCharacterMotor, float> orig, KinematicCharacterMotor self, float deltaTime)
         {
-            // Main.logger.LogError("updating phase 1");
             if (float.IsNaN(self._baseVelocity.x) || float.IsNaN(self._baseVelocity.y) || float.IsNaN(self._baseVelocity.z))
             {
                 self._baseVelocity = Vector3.zero;
@@ -18,6 +17,12 @@ namespace Optimization
             {
                 self._attachedRigidbodyVelocity = Vector3.zero;
             }
+            if (self._baseVelocity.x > 1000f || self._baseVelocity.y > 1000f || self._baseVelocity.z > 1000f)
+            {
+                // Main.logger.LogError("base velocity too high, setting to 0");
+                self._baseVelocity = Vector3.zero;
+            }
+
             self.CharacterController.BeforeCharacterUpdate(deltaTime);
             self.TransientPosition = self.Transform.position;
             self.TransientRotation = self.Transform.rotation;
@@ -69,7 +74,7 @@ namespace Optimization
                                 if (self._internalProbedColliders[j] != null)
                                 {
                                     Rigidbody attachedRigidbody = self._internalProbedColliders[j].attachedRigidbody;
-                                    if (!attachedRigidbody || (attachedRigidbody.isKinematic && !attachedRigidbody.GetComponent<PhysicsMover>()))
+                                    if (!attachedRigidbody || attachedRigidbody.isKinematic && !attachedRigidbody.GetComponent<PhysicsMover>())
                                     {
                                         Transform component = self._internalProbedColliders[j].GetComponent<Transform>();
                                         if (component != null && Physics.ComputePenetration(self.Capsule, self.TransientPosition, self.TransientRotation, self._internalProbedColliders[j], component.position, component.rotation, out vector, out num))
@@ -81,7 +86,7 @@ namespace Optimization
                                             vector = self.GetObstructionNormal(vector, hitStabilityReport);
                                             Vector3 vector2 = vector * (num + 0.001f);
 
-                                            lock (lockObject) // stupid mf
+                                            // lock (lockObject) // stupid mf
                                             {
                                                 self.TransientPosition += vector2;
                                                 if (self.OverlapsCount < self._overlaps.Length)

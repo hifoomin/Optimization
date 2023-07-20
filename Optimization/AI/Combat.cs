@@ -2,7 +2,7 @@
 using System.Threading;
 using UnityEngine;
 
-namespace Optimization
+namespace Optimization.AI
 {
     public static class Combat
     {
@@ -19,14 +19,14 @@ namespace Optimization
 
                 if (self.aiUpdateTimer <= 0f)
                 {
-                    self.aiUpdateTimer = 0.2f; // 0.2 is vanilla default
+                    self.aiUpdateTimer = 0.25f; // 0.2 is vanilla default
 
                     // new thread
                     Thread aiUpdateThread = new Thread(() =>
                     {
-                        lock (aiLock) // lock to make crashing more fake
+                        lock (aiLock) // lock to prevent sharing stuff
                         {
-                            self.UpdateAI(0.2f);
+                            self.UpdateAI(0.25f);
 
                             if (!self.dominantSkillDriver)
                             {
